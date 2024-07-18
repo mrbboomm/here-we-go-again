@@ -1,6 +1,6 @@
 module go-nf
 
-go 1.22.5
+go 1.18
 
 require (
 	github.com/andybalholm/brotli v1.0.5 // indirect
