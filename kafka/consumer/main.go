@@ -2,28 +2,33 @@ package main
 
 import (
 	"fmt"
-	"log"
-
 	"go-nf/config"
 	"go-nf/utils"
+
+	"github.com/segmentio/kafka-go"
 )
+
+type ConsumerHandler struct {
+	Conn *kafka.Conn
+}
+
+func (c *ConsumerHandler) SubscribeEvent() {
+	for {
+		message, err := c.Conn.ReadMessage(10e3)
+		if err != nil {
+			break
+		}
+		fmt.Println(string(message.Value))
+	}
+}
 
 func main() {
 	cfg := config.KafkaConnCfg{
 		Url:   "localhost:9092",
 		Topic: "tier",
 	}
-	conn := utils.KafkaConn(cfg)
+	conn := utils.KafkaConn(&cfg)
 
-	for {
-		message, err := conn.ReadMessage(10e3)
-		if err != nil {
-			break
-		}
-		fmt.Println(string(message.Value))
-	}
-
-	if err := conn.Close(); err != nil {
-		log.Fatal("failed to close connection:", err)
-	}
+	consumer := &ConsumerHandler{Conn: conn}
+	consumer.SubscribeEvent()
 }
