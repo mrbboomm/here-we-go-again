@@ -9,6 +9,7 @@ import (
 	"go-nf/utils"
 	"os"
 
+	"github.com/gofiber/fiber/v2"
 	"github.com/joho/godotenv"
 )
 
@@ -20,25 +21,32 @@ func main() {
 
 	// Connection part
 	cfg := config.KafkaConnCfg{
-		Url:   os.Getenv("KAFKA_HOST"),
-		Topic: "tier",
+		Url:    os.Getenv("KAFKA_HOST"),
+		Topics: config.KafkaTopics,
 	}
-	conn := utils.KafkaConn(&cfg)
+	kafkaHandler := utils.KafkaConn(&cfg)
 
-	producer := &producer.ProducerHandler{Conn: conn}
-	//Mock Data
-	tiers := []tier.Tier{
-		{
-			Id:   2,
-			Name: tier.Lang{En: "premium", Th: "พรีเมี่ยม"},
-		},
+	if topics := utils.ListTopic(kafkaHandler.Conn); len(topics) == 0 {
+		utils.CreateTopic(kafkaHandler.Conn)
 	}
-	// test Publish Event
-	producer.PublishEvent(tiers)
 
 	tier := &tier.Tier{Id: 1, Name: tier.Lang{En: "t", Th: "a"}}
 	user := &user.User{Username: "hello", Password: "world", Tier: tier}
 	fmt.Println("hello world")
 	fmt.Println(user)
 	fmt.Println(user.Tier)
+
+	// Initialize Fiber
+	app := fiber.New()
+
+	app.Get("/", func(c *fiber.Ctx) error {
+		return c.SendString("Hello, World!")
+	})
+
+	app.Get("/kafka/list-topic", kafkaHandler.GetListTopic)
+	app.Post("/kafka/topic", kafkaHandler.CreateTopics)
+	app.Delete("/kafka/topic", kafkaHandler.DeleteTopic)
+	app.Post("/kafka/producer", producer.SendMassage)
+
+	app.Listen(":3000")
 }
