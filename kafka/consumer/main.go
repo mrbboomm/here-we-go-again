@@ -1,34 +1,54 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"go-nf/config"
-	"go-nf/utils"
+	"log"
+	"os"
 
 	"github.com/segmentio/kafka-go"
 )
 
 type ConsumerHandler struct {
-	Conn *kafka.Conn
+	BrokerAddress string
+	Topics        []string
+	Ctx           context.Context
 }
 
-func (c *ConsumerHandler) SubscribeEvent() {
+func (c *ConsumerHandler) InitializeReader() {
+	// Kafka broker address
+	brokerAddress := c.BrokerAddress
+
+	// Topics to subscribe to
+	topics := c.Topics
+
+	// Kafka reader configuration
+	readerConfig := kafka.ReaderConfig{
+		Brokers:     []string{brokerAddress},
+		MaxBytes:    10e6, // 10MB
+		Partition:   0,
+		GroupTopics: topics,
+		GroupID:     "my-group",
+	}
+
+	r := kafka.NewReader(readerConfig)
+	// Consume messages from the topics
 	for {
-		message, err := c.Conn.ReadMessage(10e3)
+		msg, err := r.ReadMessage(c.Ctx)
 		if err != nil {
+			log.Printf("Error while reading message: %v", err)
 			break
 		}
-		fmt.Println(string(message.Value))
+		fmt.Printf("message from topic %s at offset %d: %s = %s\n", msg.Topic, msg.Offset, string(msg.Key), string(msg.Value))
+	}
+
+	if err := r.Close(); err != nil {
+		log.Fatal("failed to close reader:", err)
 	}
 }
 
 func main() {
-	cfg := config.KafkaConnCfg{
-		Url:   "localhost:9092",
-		Topic: "tier",
-	}
-	conn := utils.KafkaConn(&cfg)
-
-	consumer := &ConsumerHandler{Conn: conn}
-	consumer.SubscribeEvent()
+	consumer := &ConsumerHandler{BrokerAddress: os.Getenv("KAFKA_HOST"), Topics: config.KafkaTopics, Ctx: context.Background()}
+	consumer.InitializeReader()
 }

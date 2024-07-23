@@ -1,6 +1,8 @@
 package config
 
+var KafkaTopics = []string{"tier", "user"}
+
 type KafkaConnCfg struct {
-	Url   string
-	Topic string
+	Url    string
+	Topics []string
 }
