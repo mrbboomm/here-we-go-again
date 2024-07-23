@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go-nf/config"
 	"go-nf/kafka/producer"
+	oracle "go-nf/oracle/connection"
 	"go-nf/tier"
 	"go-nf/user"
 	"go-nf/utils"
@@ -17,6 +18,9 @@ func main() {
 	if err := godotenv.Load("local.env"); err != nil {
 		fmt.Println("NOT HAVE LOCAL ENV")
 	}
+
+	// Oracle Connection
+	oracle.Connect()
 
 	// Connection part
 	cfg := config.KafkaConnCfg{
