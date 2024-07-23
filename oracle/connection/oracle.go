@@ -2,6 +2,7 @@ package oracle
 
 import (
 	"fmt"
+	"go-nf/config"
 	migrations "go-nf/oracle/migrations"
 	"log"
 
@@ -12,13 +13,16 @@ import (
 var DB *gorm.DB
 
 func Connect(){
+	cfg := config.LocalOracleConfig()
 	options := map[string]string{
 		"CONNECTION TIMEOUT": "90",
-		"SSL":                "false",
+		"SSL": "false",
 	}
-	url := oracle.BuildUrl("127.0.0.1", 1521, "godev", "godev_user", "godev_pass", options)
+
+	dsn := oracle.BuildUrl(cfg.Url, cfg.Port, cfg.ServiceName, cfg.User, cfg.Password, options)
+
 	dialector := oracle.New(oracle.Config{
-		DSN:                     url,
+		DSN: dsn,
 		RowNumberAliasForOracle11: "ROW_NUM",
 	})
 
