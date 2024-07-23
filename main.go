@@ -19,13 +19,15 @@ func main() {
 		fmt.Println("NOT HAVE LOCAL ENV")
 	}
 
+	KAFKA_HOST := os.Getenv("KAFKA_HOST")
 	// Connection part
 	cfg := config.KafkaConnCfg{
-		Url:    os.Getenv("KAFKA_HOST"),
+		Url:    KAFKA_HOST,
 		Topics: config.KafkaTopics,
 	}
 	kafkaHandler := utils.KafkaConn(&cfg)
 
+	// Check topics
 	if topics := utils.ListTopic(kafkaHandler.Conn); len(topics) == 0 {
 		utils.CreateTopic(kafkaHandler.Conn)
 	}

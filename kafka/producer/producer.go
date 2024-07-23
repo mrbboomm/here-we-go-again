@@ -45,8 +45,7 @@ func (p *ProducerHandler) PublishEvent(payloads ...EventPayload) string {
 		})
 	}
 	ctx := context.Background()
-	err := p.Writer.WriteMessages(ctx, messages...)
-	if err != nil {
+	if err := p.Writer.WriteMessages(ctx, messages...); err != nil {
 		log.Printf("Failed to write message: %v", err)
 	}
 

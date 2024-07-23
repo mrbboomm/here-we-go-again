@@ -25,44 +25,26 @@ func (c *ConsumerHandler) InitializeReader() {
 
 	// Kafka reader configuration
 	readerConfig := kafka.ReaderConfig{
-		Brokers:  []string{brokerAddress},
-		GroupID:  "my-group",
-		MinBytes: 10e3, // 10KB
-		MaxBytes: 10e6, // 10MB
+		Brokers:     []string{brokerAddress},
+		MaxBytes:    10e6, // 10MB
+		Partition:   0,
+		GroupTopics: topics,
+		GroupID:     "my-group",
 	}
 
-	// Create Kafka readers for each topic
-	readers := make([]*kafka.Reader, len(topics))
-	for i, topic := range topics {
-		config := readerConfig
-		config.Topic = topic
-		readers[i] = kafka.NewReader(config)
-	}
-
-	defer c.CloseReader(readers)
+	r := kafka.NewReader(readerConfig)
 	// Consume messages from the topics
 	for {
-		fmt.Printf("waiting message for %v reader \n", len(readers))
-		for _, reader := range readers {
-			msg, err := reader.ReadMessage(c.Ctx)
-			if err != nil {
-				log.Printf("Error while reading message: %v", err)
-				continue
-			}
-			fmt.Printf("Received message from %s: %s\n", msg.Topic, string(msg.Value))
-			fmt.Printf("message at offset %d: %s = %s\n", msg.Offset, string(msg.Key), string(msg.Value))
+		msg, err := r.ReadMessage(c.Ctx)
+		if err != nil {
+			log.Printf("Error while reading message: %v", err)
+			break
 		}
-		// Add a small delay to avoid tight looping
-		// time.Sleep(1 * time.Second)
+		fmt.Printf("message from topic %s at offset %d: %s = %s\n", msg.Topic, msg.Offset, string(msg.Key), string(msg.Value))
 	}
-}
 
-func (c *ConsumerHandler) CloseReader(readers []*kafka.Reader) {
-	// Close the readers when done
-	for _, reader := range readers {
-		if err := reader.Close(); err != nil {
-			log.Fatal("failed to close reader:", err)
-		}
+	if err := r.Close(); err != nil {
+		log.Fatal("failed to close reader:", err)
 	}
 }
 
