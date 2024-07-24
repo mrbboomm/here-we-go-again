@@ -18,14 +18,17 @@ services:
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
 
   oracle:
-    image: gvenzl/oracle-xe:21.3.0-slim
+    image: quay.io/maksymbilenko/oracle-12c
     platform: linux/x86_64
     environment:
-      ORACLE_PASSWORD: mysecretpassword
-      ORACLE_DATABASE: godev
-      TARGET_PDB: godev
-      APP_USER: godev_user
-      APP_USER_PASSWORD: godev_pass
+      USER: godev_user
+      PASS: godev_pass
+      SID: godev
+      # ORACLE_PASSWORD: mysecretpassword
+      # ORACLE_DATABASE: godev
+      # TARGET_PDB: godev
+      # APP_USER: godev_user
+      # APP_USER_PASSWORD: godev_pass
     volumes:
       - ./docker/oracle/custom-healthcheck.sh:/opt/oracle/custom-healthcheck.sh
       - ./docker/oracle/custom-healthcheck.sql:/opt/oracle/custom-healthcheck.sql

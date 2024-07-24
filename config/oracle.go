@@ -12,8 +12,8 @@ func LocalOracleConfig() OracleConfig {
 	return OracleConfig{
 		Url: "localhost",
 		Port: 1521,
-		ServiceName: "godev",
-		User: "godev_user",
-		Password: "godev_pass",
+		ServiceName: "xe",
+		User: "system",
+		Password: "oracle",
 	}
 }
