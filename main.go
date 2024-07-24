@@ -39,6 +39,9 @@ func main() {
 	fmt.Println(user)
 	fmt.Println(user.Tier)
 
+	// test connect mongodb
+	mongodb.ConnectMongo()
+
 	// Initialize Fiber
 	app := fiber.New()
 
@@ -52,6 +55,4 @@ func main() {
 	app.Post("/kafka/producer", producer.SendMassage)
 
 	app.Listen(":3000")
-	// test connect mongodb
-	mongodb.ConnectMongo()
 }
