@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go-nf/config"
 	"go-nf/kafka/producer"
+	"go-nf/mongodb"
 	"go-nf/tier"
 	"go-nf/user"
 	"go-nf/utils"
@@ -51,4 +52,6 @@ func main() {
 	app.Post("/kafka/producer", producer.SendMassage)
 
 	app.Listen(":3000")
+	// test connect mongodb
+	mongodb.ConnectMongo()
 }
