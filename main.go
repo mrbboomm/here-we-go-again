@@ -22,7 +22,8 @@ func main() {
 
 	KAFKA_HOST := os.Getenv("KAFKA_HOST")
 	// Connection part
-	oracle.Connect()
+	oracleCfg := config.LocalOracleConfig()
+	oracle.Connect(&oracleCfg)
 
 	cfg := config.KafkaConnCfg{
 		Url:    KAFKA_HOST,

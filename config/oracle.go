@@ -6,6 +6,7 @@ type OracleConfig struct {
 	ServiceName string
 	User string
 	Password string
+	Options map[string]string
 }
 
 func LocalOracleConfig() OracleConfig {
@@ -15,5 +16,9 @@ func LocalOracleConfig() OracleConfig {
 		ServiceName: "xe",
 		User: "system",
 		Password: "oracle",
+		Options: map[string]string{
+			"CONNECTION TIMEOUT": "90",
+			"SSL": "false",
+		},
 	}
 }
