@@ -1,4 +1,4 @@
-package oracle
+package database
 
 import (
 	"log"
@@ -12,7 +12,7 @@ type Lang struct {
 }
 
 type Tier struct {
-    gorm.Model
+	gorm.Model
 	Name  Lang `gorm:"serializer:json"`
 }
 

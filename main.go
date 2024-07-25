@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 	"go-nf/config"
+	oracle "go-nf/database/oracle"
 	"go-nf/kafka/producer"
-	oracle "go-nf/oracle/connection"
 	"go-nf/tier"
 	"go-nf/user"
 	"go-nf/utils"

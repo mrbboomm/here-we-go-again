@@ -1,0 +1,5 @@
+development:
+    dialect: godror
+    datasource: system:mysecretpassword@localhost:1521/godev
+    dir: migrations/oracle
+    table: migrations

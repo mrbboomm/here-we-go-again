@@ -13,9 +13,9 @@ func LocalOracleConfig() OracleConfig {
 	return OracleConfig{
 		Url: "localhost",
 		Port: 1521,
-		ServiceName: "xe",
-		User: "system",
-		Password: "oracle",
+		ServiceName: "godev",
+		User: "godev_user",
+		Password: "godev_pass",
 		Options: map[string]string{
 			"CONNECTION TIMEOUT": "90",
 			"SSL": "false",

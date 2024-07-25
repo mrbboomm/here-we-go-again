@@ -1,4 +1,4 @@
-package oracle
+package database
 
 import (
 	"log"
