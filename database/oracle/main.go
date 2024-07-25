@@ -1,20 +1,19 @@
 package database
 
 import (
-	"database/sql"
 	"go-nf/config"
 	"log"
 
 	_ "github.com/godror/godror"
 
 	oracle "github.com/godoes/gorm-oracle"
-	migrate "github.com/rubenv/sql-migrate"
+
 	"gorm.io/gorm"
 )
 
 var serviceName = "[Oracle]"
 
-func Connect(cfg *config.OracleConfig) {
+func Connect(cfg *config.OracleConfig) *gorm.DB {
 	logPrefix := serviceName+"[Connect]"
 	log.Println(logPrefix+": connect to oracle database...")
 	dsn := oracle.BuildUrl(cfg.Url, cfg.Port, cfg.ServiceName, cfg.User, cfg.Password, cfg.Options)
@@ -24,27 +23,31 @@ func Connect(cfg *config.OracleConfig) {
 		RowNumberAliasForOracle11: "ROW_NUM",
 	})
 
-	_, err := gorm.Open(dialector, &gorm.Config{})
+	db, err := gorm.Open(dialector, &gorm.Config{})
 	if err != nil {
 			log.Fatalf("failed to connect to database")
 	}
 	log.Println(logPrefix+": connected.")
 
-	log.Println(logPrefix+": migrating...")
+	// db.AutoMigrate(&entities.Tier{},&entities.User{})
+	// return db
+	// log.Println(logPrefix+": migrating...")
 
-	db, err := sql.Open("godror", "godev_user/godev_pass@localhost:1521/godev")
-	if err != nil {
-			log.Fatalf(logPrefix+": migration failed, can not connect to database")
-	}
+	// db2, err := sql.Open("godror", "godev_user/godev_pass@localhost:1521/godev")
+	// if err != nil {
+	// 		log.Fatalf(logPrefix+": migration failed, can not connect to database")
+	// }
 
-	migrations := &migrate.FileMigrationSource{
-			Dir: "../..migrations/oracle",
-	}
+	// migrations := &migrate.FileMigrationSource{
+	// 		Dir: "../../migrations/oracle",
+	// }
 
-	n, err := migrate.Exec(db, "godror", migrations, migrate.Up)
-	if err != nil {
-			log.Fatalf(logPrefix+": migration failed: %v", err)
-	}
+	// exec, err := migrate.Exec(db2, "godror", migrations, migrate.Up)
+	// if err != nil {
+	// 		log.Fatalf(logPrefix+": migration failed: %v", err)
+	// }
 
-	log.Printf("Applied %d migrations!", n)
+	// fmt.Println(exec)
+	// log.Printf("Applied %d migrations!", n)
+	return db
 }

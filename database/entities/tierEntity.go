@@ -21,7 +21,7 @@ func (Tier) TableName() string {
 }
 
 // mock for get-tier
-func getTier(db *gorm.DB, id int) *Tier {
+func GetTier(db *gorm.DB, id int) *Tier {
 	var tier Tier
 	result := db.First(&tier, id)
 
@@ -30,4 +30,18 @@ func getTier(db *gorm.DB, id int) *Tier {
 	}
 
 	return &tier
+}
+
+func InsertTier(db *gorm.DB, obj *Tier) {
+	result := db.Save(obj)
+	if result.Error != nil {
+		log.Fatalf("Error: Cound not get tier: %v", result.Error)
+	}
+}
+
+func DeleteTier(db *gorm.DB, id int) {
+	result := db.Unscoped().Delete(&Tier{}, id)
+	if result.Error != nil {
+		log.Fatalf("Error: Cound not get tier: %v", result.Error)
+	}
 }
