@@ -3,9 +3,13 @@ package main
 import (
 	"fmt"
 	"go-nf/config"
+	"go-nf/deliveries"
+	"go-nf/entities"
 	"go-nf/kafka/producer"
 	"go-nf/mongodb"
+	repositories "go-nf/repositories/user"
 	"go-nf/tier"
+	usecases "go-nf/usecases/user"
 	"go-nf/user"
 	"go-nf/utils"
 	"os"
@@ -59,6 +63,14 @@ func main() {
 	app.Get("/user-id/:id", mongodb.GetUserLoginById)
 	app.Put("/update-user/:id", mongodb.UpdateUserLoginById)
 	app.Delete("/delete-user/:id", mongodb.DeleteUserLoginById)
+
+	// mock users data
+	users := []entities.UserEntity{{Id: "1", Name: "name1"}, {Id: "2", Name: "name2"}, {Id: "3", Name: "name3"}}
+	usersRepo := repositories.NewUserRepo(users)
+	userUseCase := usecases.NewUserUseCase((usersRepo))
+	userHandlers := deliveries.NewUserHandler((userUseCase))
+
+	app.Get("/users", userHandlers.GetAllUsers)
 
 	app.Listen(":3000")
 
