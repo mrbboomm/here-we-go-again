@@ -39,9 +39,6 @@ func main() {
 	fmt.Println(user)
 	fmt.Println(user.Tier)
 
-	// test connect mongodb
-	mongodb.ConnectMongo()
-
 	// Initialize Fiber
 	app := fiber.New()
 
@@ -54,5 +51,15 @@ func main() {
 	app.Delete("/kafka/topic", kafkaHandler.DeleteTopic)
 	app.Post("/kafka/producer", producer.SendMassage)
 
+	// connect mongo
+	mongodb.ConnectToMongo()
+	app.Post("/create-user", mongodb.CreateUserLogin)
+	app.Get("/user", mongodb.GetAllUserLogin)
+	app.Get("/user/:username", mongodb.GetUserLoginByUsername)
+	app.Get("/user-id/:id", mongodb.GetUserLoginById)
+	app.Put("/update-user/:id", mongodb.UpdateUserLoginById)
+	app.Delete("/delete-user/:id", mongodb.DeleteUserLoginById)
+
 	app.Listen(":3000")
+
 }

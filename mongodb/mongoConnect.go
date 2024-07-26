@@ -2,13 +2,11 @@ package mongodb
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
-	"net/http"
 	"time"
 
-	"github.com/gorilla/mux"
+	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -22,135 +20,128 @@ type UserLogin struct {
 	Tier     *Tier              `json:"tier,omitempty" bson:"tier,omitempty"`
 }
 
-type UserLogin struct {
-	ID        primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
-	Username  string             `json:"username,omitempty" bson:"username,omitempty"`
-	Password  string             `json:"password,omitempty" bson:"password,omitempty"`
-	firstname string
-	lastname  string
-	Tier      *Tier `json:"tier,omitempty" bson:"tier,omitempty"`
+type Lang struct {
+	En string `json:"en,omitempty" bson:"en,omitempty"`
+	Th string `json:"th,omitempty" bson:"th,omitempty"`
 }
 
-type UserLogin struct {
-	ID         primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
-	Username   string             `json:"username,omitempty" bson:"username,omitempty"`
-	Password   string             `json:"password,omitempty" bson:"password,omitempty"`
-	firstname  string
-	lastname   string
-	middlename string
-	Tier       *Tier `json:"tier,omitempty" bson:"tier,omitempty"`
+type Tier struct {
+	Id   int  `json:"_id,omitempty" bson:"_id,omitempty"`
+	Name Lang `json:"name,omitempty" bson:"name,omitempty"`
 }
 
 var client *mongo.Client
 
-func CreateUserLoginEndpoint(response http.ResponseWriter, request *http.Request) {
-	response.Header().Add("content-type", "application/json")
+func CreateUserLogin(c *fiber.Ctx) error {
 	var user UserLogin
-	json.NewDecoder(request.Body).Decode(&user)
+	if err := c.BodyParser(&user); err != nil {
+		return c.Status(fiber.StatusBadRequest).SendString(err.Error())
+	}
 	collection := client.Database("testdb2").Collection("login")
-	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 	result, err := collection.InsertOne(ctx, user)
 	if err != nil {
 		log.Fatal(err)
+		return c.Status(fiber.StatusInternalServerError).SendString(err.Error())
 	}
-	json.NewEncoder(response).Encode(result)
+	return c.JSON(result)
 }
 
-func GetAllUserLoginEndpoint(response http.ResponseWriter, request *http.Request) {
-	response.Header().Add("content-type", "application/json")
+func GetAllUserLogin(c *fiber.Ctx) error {
 	var users []UserLogin
 	collection := client.Database("testdb2").Collection("login")
-	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
-	curser, err := collection.Find(ctx, bson.M{})
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	cursor, err := collection.Find(ctx, bson.M{})
 	if err != nil {
-		response.WriteHeader(http.StatusInternalServerError)
-		response.Write([]byte(`{ "message": "` + err.Error() + `"}`))
+		return c.Status(fiber.StatusInternalServerError).SendString(err.Error())
 	}
-	defer curser.Close(ctx)
-	for curser.Next(ctx) {
+	defer cursor.Close(ctx)
+	for cursor.Next(ctx) {
 		var user UserLogin
-		curser.Decode(&user)
+		if err := cursor.Decode(&user); err != nil {
+			return c.Status(fiber.StatusInternalServerError).SendString(err.Error())
+		}
 		users = append(users, user)
 	}
-	if err := curser.Err(); err != nil {
-		response.WriteHeader(http.StatusInternalServerError)
-		response.Write([]byte(`{ "message": "` + err.Error() + `"}`))
-		return
+	if err := cursor.Err(); err != nil {
+		return c.Status(fiber.StatusInternalServerError).SendString(err.Error())
 	}
-	json.NewEncoder(response).Encode(users)
+	return c.JSON(users)
 }
 
-func GetUserLoginByUsername(response http.ResponseWriter, request *http.Request) {
-	response.Header().Add("content-type", "application/json")
-	params := mux.Vars(request)
-	name := params["username"]
+func GetUserLoginByUsername(c *fiber.Ctx) error {
+	name := c.Params("username")
 	var user UserLogin
 	collection := client.Database("testdb2").Collection("login")
-	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 	err := collection.FindOne(ctx, bson.M{"username": name}).Decode(&user)
 	if err != nil {
-		response.WriteHeader(http.StatusInternalServerError)
-		response.Write([]byte(`{ "message": "` + err.Error() + `"}`))
+		return c.Status(fiber.StatusInternalServerError).SendString(err.Error())
 	}
-	json.NewEncoder(response).Encode(user)
+	return c.JSON(user)
 }
 
-func GetUserLoginById(response http.ResponseWriter, request *http.Request) {
-	response.Header().Add("content-type", "application/json")
-	params := mux.Vars(request)
-	id, err := primitive.ObjectIDFromHex(params["id"])
+func GetUserLoginById(c *fiber.Ctx) error {
+	idStr := c.Params("id")
+	id, err := primitive.ObjectIDFromHex(idStr)
 	if err != nil {
-		response.WriteHeader(http.StatusBadRequest)
-		response.Write([]byte(`{ "message": "Invalid ID format"}`))
-		return
+		return c.Status(fiber.StatusBadRequest).SendString("Invalid ID format")
 	}
 
 	var user UserLogin
 	collection := client.Database("testdb2").Collection("login")
-	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
-	err = collection.FindOne(ctx, UserLogin{ID: id}).Decode(&user)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	err = collection.FindOne(ctx, bson.M{"_id": id}).Decode(&user)
 	if err != nil {
-		response.WriteHeader(http.StatusInternalServerError)
-		response.Write([]byte(`{ "message": "` + err.Error() + `"}`))
+		return c.Status(fiber.StatusInternalServerError).SendString(err.Error())
 	}
-	json.NewEncoder(response).Encode(user)
+	return c.JSON(user)
 }
 
-func UpdateUserLoginById(response http.ResponseWriter, request *http.Request) {
-	response.Header().Add("content-type", "application/json")
-	params := mux.Vars(request)
-	id, _ := primitive.ObjectIDFromHex(params["id"])
+func UpdateUserLoginById(c *fiber.Ctx) error {
+	idStr := c.Params("id")
+	id, err := primitive.ObjectIDFromHex(idStr)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).SendString("Invalid ID format")
+	}
+
 	var user UserLogin
-	json.NewDecoder(request.Body).Decode(&user)
+	if err := c.BodyParser(&user); err != nil {
+		return c.Status(fiber.StatusBadRequest).SendString(err.Error())
+	}
+
 	collection := client.Database("testdb2").Collection("login")
-	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 	filter := bson.M{"_id": id}
-	update := bson.M{
-		"$set": user,
-	}
+	update := bson.M{"$set": user}
 	result, err := collection.UpdateOne(ctx, filter, update)
 	if err != nil {
-		response.WriteHeader(http.StatusInternalServerError)
-		response.Write([]byte(`{ "message": "` + err.Error() + `"}`))
-		return
+		return c.Status(fiber.StatusInternalServerError).SendString(err.Error())
 	}
-	json.NewEncoder(response).Encode(result)
+	return c.JSON(result)
 }
 
-func DeleteUserLoginById(response http.ResponseWriter, request *http.Request) {
-	response.Header().Add("content-type", "application/json")
-	params := mux.Vars(request)
-	id, _ := primitive.ObjectIDFromHex(params["id"])
+func DeleteUserLoginById(c *fiber.Ctx) error {
+	idStr := c.Params("id")
+	id, err := primitive.ObjectIDFromHex(idStr)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).SendString("Invalid ID format")
+	}
+
 	collection := client.Database("testdb2").Collection("login")
-	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 	filter := bson.M{"_id": id}
 	result, err := collection.DeleteOne(ctx, filter)
 	if err != nil {
-		response.WriteHeader(http.StatusInternalServerError)
-		response.Write([]byte(`{ "message": "` + err.Error() + `"}`))
-		return
+		return c.Status(fiber.StatusInternalServerError).SendString(err.Error())
 	}
-	json.NewEncoder(response).Encode(result)
+	return c.JSON(result)
 }
 
 func ConnectToMongo() {
@@ -164,12 +155,4 @@ func ConnectToMongo() {
 		fmt.Println("Error connecting to MongoDB:", err)
 		return
 	}
-	router := mux.NewRouter()
-	router.HandleFunc("/create-user", CreateUserLoginEndpoint).Methods("POST")
-	router.HandleFunc("/user", GetAllUserLoginEndpoint).Methods("GET")
-	router.HandleFunc("/user/{username}", GetUserLoginByUsername).Methods("GET")
-	router.HandleFunc("/user-id/{id}", GetUserLoginById).Methods("GET")
-	router.HandleFunc("/update-user/{id}", UpdateUserLoginById).Methods("PUT")
-	router.HandleFunc("/delete-user/{id}", DeleteUserLoginById).Methods("DELETE")
-	http.ListenAndServe(":8081", router)
 }
