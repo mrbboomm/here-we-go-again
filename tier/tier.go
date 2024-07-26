@@ -6,7 +6,6 @@ type Lang struct {
 }
 
 type Tier struct {
-	Id int
+	Id   int
 	Name Lang
-	
 }

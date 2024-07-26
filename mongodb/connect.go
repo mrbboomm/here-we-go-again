@@ -10,6 +10,23 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+type Lang struct {
+	En string `bson:"en"`
+	Th string `bson:"th"`
+}
+
+type Tier struct {
+	ID   int  `bson:"id"`
+	Name Lang `bson:"name"`
+}
+
+type User struct {
+	ID       int    `bson:userid`
+	Username string `bson:"username"`
+	Password string `bson:"password"`
+	Tier     *Tier  `bson:"tier"`
+}
+
 func ConnectMongo() {
 	clientOptions := options.Client().ApplyURI("mongodb://mongouser:mongopass@localhost:27017")
 
@@ -29,19 +46,72 @@ func ConnectMongo() {
 	// Get a handle for the collection
 	collection := client.Database("testdb").Collection("testcol")
 
-	// Insert a document
-	doc := bson.D{{"name", "Alice"}, {"age", 25}}
-	insertResult, err := collection.InsertOne(context.TODO(), doc)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println("Inserted a document: ", insertResult.InsertedID)
+	testcol2 := client.Database("testdb").Collection("testcol2")
 
-	// Find a document
-	var result bson.D
-	err = collection.FindOne(context.TODO(), bson.D{{"name", "Alice"}}).Decode(&result)
+	// // Insert a document (new user)
+	userAlice := User{
+		Username: "useralice",
+		Password: "passalice",
+		Tier: &Tier{
+			ID: 1,
+			Name: Lang{
+				En: "Gold",
+				Th: "ทอง",
+			},
+		},
+	}
+	insertResult, err := testcol2.InsertOne(context.TODO(), userAlice)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("Found a document: ", result)
+	fmt.Println("Inserted a single document: ", insertResult)
+
+	// Find a user
+	var result2 User
+	err = collection.FindOne(context.TODO(), bson.D{{"username", userAlice.Username}}).Decode(&result2)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Found a single document: %+v\n", result2)
+
+	insertResult2, err := testcol2.InsertOne(context.TODO(), userAlice)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("Inserted a single document: ", insertResult2)
+
+	// Find a user
+	var result User
+	err = collection.FindOne(context.TODO(), bson.D{{"username", userAlice.Username}}).Decode(&result)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Found a single document: %+v\n", result)
+
+	// // Update a user
+	// filter := bson.D{{"username", "exampleuser"}}
+	// update := bson.D{
+	// 	{"$set", bson.D{
+	// 		{"password", "newexamplepass"},
+	// 		{"tier", &Tier{
+	// 			ID: 2,
+	// 			Name: Lang{
+	// 				En: "Platinum",
+	// 				Th: "แพลตตินัม",
+	// 			},
+	// 		}},
+	// 	}},
+	// }
+	// updateResult, err := collection.UpdateOne(context.TODO(), filter, update)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// fmt.Printf("Matched %v documents and updated %v documents.\n", updateResult.MatchedCount, updateResult.ModifiedCount)
+
+	// // Delete a user
+	// deleteResult, err := collection.DeleteOne(context.TODO(), filter)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// fmt.Printf("Deleted %v documents in the collection\n", deleteResult.DeletedCount)
 }
