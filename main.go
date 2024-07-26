@@ -51,4 +51,6 @@ func main() {
 	app.Post("/kafka/producer", producer.SendMassage)
 
 	app.Listen(":3000")
+
+	// test
 }
