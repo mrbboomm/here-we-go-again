@@ -6,15 +6,15 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-type userRepoMock struct {
+type countryRepoMock struct {
 	mock.Mock
 }
 
-func NewUserRepoMock() *userRepoMock{
-	return &userRepoMock{}
+func NewCountryRepoMock() *countryRepoMock{
+	return &countryRepoMock{}
 }
 
-func(u *userRepoMock)FindAll()[]entities.UserEntity{
+func(u *countryRepoMock)FindAll()[]entities.CountryEntity{
 	args := u.Called()
-	return args.Get(0).([]entities.UserEntity)
+	return args.Get(0).([]entities.CountryEntity)
 }

@@ -32,6 +32,10 @@ type Tier struct {
 
 var client *mongo.Client
 
+func SetClient(mongoClient *mongo.Client) {
+	client = mongoClient
+}
+
 func CreateUserLogin(c *fiber.Ctx) error {
 	var user UserLogin
 	if err := c.BodyParser(&user); err != nil {
@@ -156,3 +160,4 @@ func ConnectToMongo() {
 		return
 	}
 }
+

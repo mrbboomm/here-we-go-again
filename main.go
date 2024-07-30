@@ -1,21 +1,24 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"go-nf/config"
 	"go-nf/deliveries"
-	"go-nf/entities"
 	"go-nf/kafka/producer"
 	"go-nf/mongodb"
-	repositories "go-nf/repositories/user"
+	repositories "go-nf/repositories/country"
 	"go-nf/tier"
-	usecases "go-nf/usecases/user"
+	usecases "go-nf/usecases/country"
 	"go-nf/user"
 	"go-nf/utils"
 	"os"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/joho/godotenv"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func main() {
@@ -56,7 +59,23 @@ func main() {
 	app.Post("/kafka/producer", producer.SendMassage)
 
 	// connect mongo
-	mongodb.ConnectToMongo()
+	clientOptions := options.Client().ApplyURI("mongodb://mongouser:mongopass@localhost:27017")
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	client, err := mongo.Connect(ctx, clientOptions)
+	if err != nil {
+		fmt.Println("Error connecting to MongoDB:", err)
+		return
+	}
+	defer func() {
+		if err := client.Disconnect(ctx); err != nil {
+			panic(err)
+		}
+	}()
+	mongodb.SetClient(client)
+
+	// user api (TEST)
+	// mongodb.ConnectToMongo()
 	app.Post("/create-user", mongodb.CreateUserLogin)
 	app.Get("/user", mongodb.GetAllUserLogin)
 	app.Get("/user/:username", mongodb.GetUserLoginByUsername)
@@ -64,13 +83,12 @@ func main() {
 	app.Put("/update-user/:id", mongodb.UpdateUserLoginById)
 	app.Delete("/delete-user/:id", mongodb.DeleteUserLoginById)
 
-	// mock users data
-	users := []entities.UserEntity{{Id: "1", Name: "name1"}, {Id: "2", Name: "name2"}, {Id: "3", Name: "name3"}}
-	usersRepo := repositories.NewUserRepo(users)
-	userUseCase := usecases.NewUserUseCase((usersRepo))
-	userHandlers := deliveries.NewUserHandler((userUseCase))
+// country api (TEST)
+	countryRepo := repositories.NewCountryRepo(client)
+	countryUseCase := usecases.NewCountryUseCase(countryRepo)
+	countryHandlers := deliveries.NewCountryHandler((countryUseCase))
 
-	app.Get("/users", userHandlers.GetAllUsers)
+	app.Post("/country", countryHandlers.CreateCountry)
 
 	app.Listen(":3000")
 
